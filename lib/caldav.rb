@@ -1,12 +1,19 @@
+'''
+caldav.rb - originally from https://github.com/loosecannon93/ruby-caldav/blob/master/lib/caldav.rb
+highly modified (specifically to use the icalendar class to parse existing events) by Bradley McCrorey <bradley.mccrorey@contegix.com>
+'''
+
 require 'net/https'
 require 'rubygems'
 require 'uuid'
 require 'rexml/document'
 require 'rexml/xpath'
 require 'date'
+require 'icalendar'
+require 'time'
 
 class Event
-    attr_accessor :uid, :created, :dtstart, :dtend, :lastmodified, :summary
+    attr_accessor :uid, :created, :dtstart, :dtend, :lastmodified, :summary, :description, :name, :action
 end
 
 class Todo
@@ -24,6 +31,7 @@ module Net
 end
 
 class Caldav
+    include Icalendar
     attr_accessor :host, :port, :url, :user, :password
 
     def initialize( host, port, url, user, password )
@@ -53,9 +61,8 @@ class Caldav
 """
         res = nil
         http = Net::HTTP.new(@host, @port)
-#        http.set_debug_output $stderr
+        #http.set_debug_output $stderr
 
-        #Net::HTTP.start(@host, @port) {|http|
         http.start {|http|
 
             req = Net::HTTP::Report.new(@url, initheader = {'Content-Type'=>'application/xml'} )
@@ -68,9 +75,9 @@ class Caldav
         result = []
         xml = REXML::Document.new( res.body )
         REXML::XPath.each( xml, '//c:calendar-data/', { "c"=>"urn:ietf:params:xml:ns:caldav"} ){ |c|
-            result <<  parseVcal( c.text )
+            result <<  c.text
         }
-        return result
+        return parseVcal(result)
     end
     
     def get uuid
@@ -124,6 +131,50 @@ END:VCALENDAR"""
         return uuid, res
     end
 
+    def add_alarm tevent, altCal="Calendar"
+    #[#<Icalendar::Alarm:0x10b9d1b90 @name=\"VALARM\", @components={}, @properties={\"trigger\"=>\"-PT5M\", \"action\"=>\"DISPLAY\", \"description\"=>\"\"}>]    
+        dtstart_string = ( Time.parse(tevent.dtstart.to_s) + Time.now.utc_offset.to_i.abs ).strftime "%Y%m%dT%H%M%S"
+        dtend_string = ( Time.parse(tevent.dtend.to_s) + Time.now.utc_offset.to_i.abs ).strftime "%Y%m%dT%H%M%S"
+        alarmText = <<EOL
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:Ruby iCalendar
+BEGIN:VEVENT
+UID:#{tevent.uid}
+SUMMARY:#{tevent.summary}
+DESCRIPTION:#{tevent.description}
+DTSTART:#{dtstart_string}
+DTEND:#{dtend_string}
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER;RELATED=START:-PT5M
+DESCRIPTION:Reminder
+END:VALARM
+BEGIN:VALARM
+TRIGGER:-PT5M
+ACTION:EMAIL
+ATTENDEE:#{tevent.organizer}
+SUMMARY:#{tevent.summary}
+DESCRIPTION:#{tevent.description}
+TRIGGER:-PT5M
+END:VALARM
+END:VEVENT
+END:VCALENDAR
+EOL
+        p alarmText
+        res = nil
+        puts "#{@url}/#{tevent.uid}.ics"
+        thttp = Net::HTTP.start(@host, @port)
+        #thttp.set_debug_output $stderr
+        req = Net::HTTP::Put.new("#{@url}/#{tevent.uid}.ics", initheader = {'Content-Type'=>'text/calendar'} )
+        req.basic_auth @user, @password
+        req.body = alarmText
+        res = thttp.request( req )
+        p res.inspect
+
+        return tevent.uid
+    end
+    
     def update event
         dings = """BEGIN:VCALENDAR
 PRODID:Caldav.rb
@@ -197,33 +248,18 @@ END:VCALENDAR"""
         }
         return result
     end
-
+    
     def parseVcal( vcal )
-        if vcal.index( "VEVENT" ) then
-            e = Event.new
-            data = filterTimezone( vcal )
-            data.split("\n").each{ |l|
-                e.uid = getField( "UID:", l) if l =~ /UID/
-                e.created = getField( "CREATED:", l) if l =~ /CREATED/
-                e.dtstart = getField( "DTSTART", l) if l =~ /DTSTART/
-                e.dtend = getField( "DTEND", l) if l =~ /DTEND/
-                e.lastmodified = getField( "LAST-MODIFIED:", l) if l =~ /LAST-MODIFIED/
-                e.summary = getField( "SUMMARY", l) if l =~ /SUMMARY/
+        return_events = Array.new
+        cals = Icalendar.parse(vcal)
+        cals.each { |tcal|
+            tcal.events.each { |tevent|
+                if tevent.recurrence_id.to_s.empty? # skip recurring events
+                    return_events << tevent
+                end
             }
-            return e
-        elsif vcal.index( "VTODO" ) then 
-            e = Todo.new
-            vcal.split("\n").each{ |l|
-                e.uid = getField( "UID:", l ) if l =~ /UID:/
-                e.created = getField( "CREATED:", l) if l =~ /CREATED:/
-                e.dtstart = getField( "DTSTAMP:", l) if l =~ /DTSTAMP:/
-                e.lastmodified = getField( "LAST-MODIFIED:", l) if l =~ /LAST-MODIFIED:/
-                e.summary = getField( "SUMMARY:", l) if l =~ /SUMMARY:/
-                e.status = getField( "STATUS:", l) if l =~ /STATUS:/
-                e.completed = getField( "COMPLETED:", l) if l =~ /COMPLETED:/
-            }
-            return e
-        end
+        }
+        return return_events
     end
     
     def filterTimezone( vcal )
