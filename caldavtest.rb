@@ -1,6 +1,6 @@
 require './lib/caldav.rb'
 
-class CaldavTester
+class CalDAVTester
 
     def initialize
         $caldav = {
@@ -15,7 +15,7 @@ class CaldavTester
         rescue LoadError
         end
         
-        @cal = Caldav.new $caldav[:host], $caldav[:port], $caldav[:url], $caldav[:user], $caldav[:password]
+        @cal = CalDAV::Client.new $caldav[:host], $caldav[:port], $caldav[:url], $caldav[:user], $caldav[:password]
     end
 
     attr :cal
@@ -63,7 +63,7 @@ end
 #puts r.to_xml
 #exit
 
-t = CaldavTester.new
+t = CalDAVTester.new
 
 uuid = t.test_create_event
 t.test_get_event( uuid )

@@ -17,7 +17,8 @@ class Todo
     attr_accessor :uid, :created, :summary, :dtstart, :status, :completed
 end
 
-class Caldav
+module CalDAV
+class Client
     include Icalendar
     attr_accessor :host, :port, :url, :user, :password, :ssl
 
@@ -225,4 +226,5 @@ END:VCALENDAR"""
         }
         return data
     end
+end
 end
