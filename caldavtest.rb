@@ -46,7 +46,7 @@ class CaldavTester
         puts ev
     end
 
-    def test_read_toto
+    def test_read_todo
         res = cal.todo
         
         res.each{ |todo| 
@@ -59,6 +59,9 @@ class CaldavTester
     end
 end
 
+#r = CalDAV::Request::Report.new( "20111201T000000", "20131231T000000" )
+#puts r.to_xml
+#exit
 
 t = CaldavTester.new
 
@@ -68,6 +71,6 @@ t.test_delete_event( uuid )
 
 t.test_report
 
-#t.test_read_toto
+t.test_read_todo
 
 

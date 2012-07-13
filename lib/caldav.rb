@@ -6,6 +6,9 @@ require 'date'
 require 'icalendar'
 require 'time'
 
+require File.join( File.dirname(__FILE__), 'caldav', 'request.rb' )
+require File.join( File.dirname(__FILE__), 'caldav', 'net.rb' )
+
 class Event
     attr_accessor :uid, :created, :dtstart, :dtend, :lastmodified, :summary, :description, :name, :action
 end
@@ -14,70 +17,40 @@ class Todo
     attr_accessor :uid, :created, :summary, :dtstart, :status, :completed
 end
 
-module Net
-    class HTTP
-        class Report < HTTPRequest
-            METHOD = 'REPORT'
-            REQUEST_HAS_BODY = true
-            RESPONSE_HAS_BODY = true
-        end
-    end
-end
-
 class Caldav
     include Icalendar
-    attr_accessor :host, :port, :url, :user, :password
+    attr_accessor :host, :port, :url, :user, :password, :ssl
 
     def initialize( host, port, url, user, password )
-       @host = host
-       @port = port
-       @url = url
-       @user = user
+       @host     = host
+       @port     = port
+       @url      = url
+       @user     = user
        @password = password 
+       @ssl      = port == 443
     end
 
     def __create_http
         http = Net::HTTP.new(@host, @port)
-        http.use_ssl = true
+        http.use_ssl = @ssl
         http.verify_mode = OpenSSL::SSL::VERIFY_NONE
         #http.set_debug_output $stderr
         http
     end
 
     def report start, stop
-        dings = """<?xml version='1.0'?>
-<c:calendar-query xmlns:c='urn:ietf:params:xml:ns:caldav'>
-  <d:prop xmlns:d='DAV:'>
-    <d:getetag/>
-    <c:calendar-data>
-    </c:calendar-data>
-  </d:prop>
-  <c:filter>
-    <c:comp-filter name='VCALENDAR'>
-      <c:comp-filter name='VEVENT'>
-        <c:time-range start='#{start}Z' end='#{stop}Z'/>
-      </c:comp-filter>
-    </c:comp-filter>
-  </c:filter>
-</c:calendar-query>
-"""
         res = nil
-
         __create_http.start {|http|
-
             req = Net::HTTP::Report.new(@url, initheader = {'Content-Type'=>'application/xml'} )
             req.basic_auth @user, @password
-            req.body = dings
-
+            req.body = CalDAV::Request::ReportVEVENT.new( start, stop ).to_xml
             res = http.request( req )
-            #p res.body
         }
         result = []
         xml = REXML::Document.new( res.body )
         REXML::XPath.each( xml, '//c:calendar-data/', { "c"=>"urn:ietf:params:xml:ns:caldav"} ){ |c|
             result += parseVcal( c.text )
         }
-        #return parseVcal(result)
         return result
     end
     
@@ -100,12 +73,9 @@ class Caldav
     end
 
     def create event
-        now = DateTime.now 
-        nowstr = now.strftime "%Y%m%dT%H%M%SZ"
-        uuid_generator =  UUID.new
-        uuid = uuid_generator.generate
-
-     dings = """BEGIN:VCALENDAR
+        nowstr = DateTime.now.strftime "%Y%m%dT%H%M%SZ"
+        uuid   = UUID.generate
+        dings  = """BEGIN:VCALENDAR
 PRODID:Caldav.rb
 VERSION:2.0
 BEGIN:VEVENT
@@ -117,18 +87,15 @@ DTEND:#{event.dtend.strftime("%Y%m%dT%H%M%S")}
 END:VEVENT
 END:VCALENDAR"""
 
-
-
         res = nil
         http = Net::HTTP.new(@host, @port) 
-        req = Net::HTTP::Put.new("#{@url}/#{uuid}.ics")
-        req['Content-Type'] = 'text/calendar'
-        http.use_ssl = true
-        http.verify_mode = OpenSSL::SSL::VERIFY_NONE
-        req.basic_auth @user, @password
-        req.body = dings
-        res = http.request( req )
-        puts @user, @password, @url, @host, @port, dings
+        __create_http.start { |http|
+            req = Net::HTTP::Put.new("#{@url}/#{uuid}.ics")
+            req['Content-Type'] = 'text/calendar'
+            req.basic_auth @user, @password
+            req.body = dings
+            res = http.request( req )
+        }
         return uuid, res
     end
 
@@ -220,32 +187,17 @@ END:VCALENDAR"""
     end
 
     def todo 
-        dings = """<?xml version='1.0'?>
-<c:calendar-query xmlns:c='urn:ietf:params:xml:ns:caldav'>
-  <d:prop xmlns:d='DAV:'>
-    <d:getetag/>
-    <c:calendar-data>
-    </c:calendar-data>
-  </d:prop>
-  <c:filter>
-    <c:comp-filter name='VCALENDAR'>
-      <c:comp-filter name='VTODO'>
-      </c:comp-filter>
-    </c:comp-filter>
-  </c:filter>
-</c:calendar-query>
-"""
         res = nil
-        Net::HTTP.start(@host, @port) {|http|
+        __create_http.start {|http|
             req = Net::HTTP::Report.new(@url, initheader = {'Content-Type'=>'application/xml'} )
             req.basic_auth @user, @password
-            req.body = dings
+            req.body = CalDAV::Request::ReportVTODO.new.to_xml
             res = http.request( req )
         }
         result = []
         xml = REXML::Document.new( res.body )
         REXML::XPath.each( xml, '//calendar-data/', { "c"=>"urn:ietf:params:xml:ns:caldav"} ){ |c|
-            result << parseVcal( c.text )
+            result += parseVcal( c.text )
         }
         return result
     end
@@ -272,12 +224,5 @@ END:VCALENDAR"""
             inTZ = false if l.index("END:VTIMEZONE") 
         }
         return data
-    end
-
-    def getField( name, l )
-        fname = (name[-1] == ':'[0]) ? name[0..-2] : name 
-        return NIL unless l.index(fname)
-        idx = l.index( ":", l.index(fname))
-        return l[ idx+1..-1 ] 
     end
 end
