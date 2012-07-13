@@ -1,0 +1,3 @@
+CalDAV library
+
+based on 4fthawaiian/ruby-caldav and collectiveidea/caldav
