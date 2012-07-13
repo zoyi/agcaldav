@@ -1,10 +1,4 @@
-'''
-caldav.rb - originally from https://github.com/loosecannon93/ruby-caldav/blob/master/lib/caldav.rb
-highly modified (specifically to use the icalendar class to parse existing events) by Bradley McCrorey <bradley.mccrorey@contegix.com>
-'''
-
 require 'net/https'
-require 'rubygems'
 require 'uuid'
 require 'rexml/document'
 require 'rexml/xpath'
@@ -42,6 +36,14 @@ class Caldav
        @password = password 
     end
 
+    def __create_http
+        http = Net::HTTP.new(@host, @port)
+        http.use_ssl = true
+        http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+        #http.set_debug_output $stderr
+        http
+    end
+
     def report start, stop
         dings = """<?xml version='1.0'?>
 <c:calendar-query xmlns:c='urn:ietf:params:xml:ns:caldav'>
@@ -60,38 +62,37 @@ class Caldav
 </c:calendar-query>
 """
         res = nil
-        http = Net::HTTP.new(@host, @port)
-        #http.set_debug_output $stderr
 
-        http.start {|http|
+        __create_http.start {|http|
 
             req = Net::HTTP::Report.new(@url, initheader = {'Content-Type'=>'application/xml'} )
             req.basic_auth @user, @password
             req.body = dings
 
-
             res = http.request( req )
+            #p res.body
         }
         result = []
         xml = REXML::Document.new( res.body )
         REXML::XPath.each( xml, '//c:calendar-data/', { "c"=>"urn:ietf:params:xml:ns:caldav"} ){ |c|
-            result <<  c.text
+            result += parseVcal( c.text )
         }
-        return parseVcal(result)
+        #return parseVcal(result)
+        return result
     end
     
     def get uuid
         res = nil
-        Net::HTTP.start( @host, @port ) {|http|
+        __create_http.start {|http|
             req = Net::HTTP::Get.new("#{@url}/#{uuid}.ics")
             req.basic_auth @user, @password
             res = http.request( req )
         }
-        return parseVcal( res.body )
+        return parseVcal( res.body ), res
     end
 
     def delete uuid
-        Net::HTTP.start(@host, @port) {|http|
+        __create_http.start {|http|
             req = Net::HTTP::Delete.new("#{@url}/#{uuid}.ics")
             req.basic_auth @user, @password
             res = http.request( req )
@@ -164,7 +165,7 @@ EOL
         p alarmText
         res = nil
         puts "#{@url}/#{tevent.uid}.ics"
-        thttp = Net::HTTP.start(@host, @port)
+        thttp = __create_http.start
         #thttp.set_debug_output $stderr
         req = Net::HTTP::Put.new("#{@url}/#{tevent.uid}.ics", initheader = {'Content-Type'=>'text/calendar'} )
         req.basic_auth @user, @password
@@ -209,7 +210,7 @@ END:VEVENT
 END:VCALENDAR"""
 
         res = nil
-        Net::HTTP.start(@host, @port) {|http|
+        __create_http.start {|http|
             req = Net::HTTP::Put.new("#{@url}/#{event.uid}.ics", initheader = {'Content-Type'=>'text/calendar'} )
             req.basic_auth @user, @passowrd
             req.body = dings
