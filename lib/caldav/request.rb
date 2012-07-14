@@ -1,10 +1,10 @@
 require 'builder'
 
 module CalDAV
+    NAMESPACES = { "xmlns:d" => 'DAV:', "xmlns:c" => "urn:ietf:params:xml:ns:caldav" }
     module Request
         class Base
             def initialize
-                @namespaces = { "xmlns:d" => 'DAV:', "xmlns:c" => "urn:ietf:params:xml:ns:caldav" }
                 @xml = Builder::XmlMarkup.new(:indent => 2)
                 @xml.instruct!
             end
@@ -20,7 +20,7 @@ module CalDAV
             end
             
             def to_xml
-                xml.c :mkcalendar, @namespaces do
+                xml.c :mkcalendar, NAMESPACES do
                     xml.d :set do
                         xml.d :prop do
                             xml.d :displayname, displayname unless displayname.to_s.empty?
@@ -41,7 +41,7 @@ module CalDAV
             end
 
             def to_xml
-                xml.c 'calendar-query'.intern, @namespaces do
+                xml.c 'calendar-query'.intern, NAMESPACES do
                     xml.d :prop do
                         xml.d :getetag
                         xml.c 'calendar-data'.intern
@@ -59,7 +59,7 @@ module CalDAV
 
         class ReportVTODO < Base
             def to_xml
-                xml.c 'calendar-query'.intern, @namespaces do
+                xml.c 'calendar-query'.intern, NAMESPACES do
                     xml.d :prop do
                         xml.d :getetag
                         xml.c 'calendar-data'.intern
