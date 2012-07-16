@@ -1,0 +1,7 @@
+#!/usr/bin/env ruby
+
+require 'caldav'
+
+prg = CalDAV::CalDAVer.new
+prg.run_args( ARGV )
+
