@@ -2,8 +2,24 @@ module CalDAV
     class Client
         include Icalendar
         attr_accessor :host, :port, :url, :user, :password, :ssl
-    
-        def initialize( host, port, url, user, password )
+
+        def initialize( *args )
+            case args.length
+            when 3
+                __init_from_uri( *args )
+            when 5
+                __init_from_host_port( *args )
+            else
+                raise "#{self.class.to_s}: invalid number of arguments: #{args.length}"
+            end
+        end
+
+        def __init_from_uri( suri, user, password )
+            uri = URI.new( suri )
+            puts "FIXME"
+        end
+
+        def __init_from_host_port( host, port, url, user, password )
            @host     = host
            @port     = port
            @url      = url
