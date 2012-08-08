@@ -47,7 +47,7 @@ module CalDAV
             result = []
             xml = REXML::Document.new( res.body )
             REXML::XPath.each( xml, '//c:calendar-data/', { "c"=>"urn:ietf:params:xml:ns:caldav"} ){ |c|
-                result += parseVcal( c.text )
+                result += parse_events( c.text )
             }
             return result
         end
@@ -59,7 +59,9 @@ module CalDAV
                 req.basic_auth @user, @password
                 res = http.request( req )
             }
-            return parseVcal( res.body ), res
+
+            # FIXME: parse event/todo/vcard
+            return parse_events( res.body ), res
         end
     
         def delete uuid
@@ -74,17 +76,17 @@ module CalDAV
             nowstr = DateTime.now.strftime "%Y%m%dT%H%M%SZ"
             uuid   = UUID.generate
             dings  = """BEGIN:VCALENDAR
-    PRODID:Caldav.rb
-    VERSION:2.0
-    BEGIN:VEVENT
-    CREATED:#{nowstr}
-    UID:#{uuid}
-    SUMMARY:#{event.summary}
-    DTSTART:#{event.dtstart.strftime("%Y%m%dT%H%M%S")}
-    DTEND:#{event.dtend.strftime("%Y%m%dT%H%M%S")}
-    END:VEVENT
-    END:VCALENDAR"""
-    
+PRODID:Caldav.rb
+VERSION:2.0
+BEGIN:VEVENT
+CREATED:#{nowstr}
+UID:#{uuid}
+SUMMARY:#{event.summary}
+DTSTART:#{event.dtstart.strftime("%Y%m%dT%H%M%S")}
+DTEND:#{event.dtend.strftime("%Y%m%dT%H%M%S")}
+END:VEVENT
+END:VCALENDAR"""
+
             res = nil
             http = Net::HTTP.new(@host, @port) 
             __create_http.start { |http|
@@ -102,30 +104,30 @@ module CalDAV
             dtstart_string = ( Time.parse(tevent.dtstart.to_s) + Time.now.utc_offset.to_i.abs ).strftime "%Y%m%dT%H%M%S"
             dtend_string = ( Time.parse(tevent.dtend.to_s) + Time.now.utc_offset.to_i.abs ).strftime "%Y%m%dT%H%M%S"
             alarmText = <<EOL
-    BEGIN:VCALENDAR
-    VERSION:2.0
-    PRODID:Ruby iCalendar
-    BEGIN:VEVENT
-    UID:#{tevent.uid}
-    SUMMARY:#{tevent.summary}
-    DESCRIPTION:#{tevent.description}
-    DTSTART:#{dtstart_string}
-    DTEND:#{dtend_string}
-    BEGIN:VALARM
-    ACTION:DISPLAY
-    TRIGGER;RELATED=START:-PT5M
-    DESCRIPTION:Reminder
-    END:VALARM
-    BEGIN:VALARM
-    TRIGGER:-PT5M
-    ACTION:EMAIL
-    ATTENDEE:#{tevent.organizer}
-    SUMMARY:#{tevent.summary}
-    DESCRIPTION:#{tevent.description}
-    TRIGGER:-PT5M
-    END:VALARM
-    END:VEVENT
-    END:VCALENDAR
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:Ruby iCalendar
+BEGIN:VEVENT
+UID:#{tevent.uid}
+SUMMARY:#{tevent.summary}
+DESCRIPTION:#{tevent.description}
+DTSTART:#{dtstart_string}
+DTEND:#{dtend_string}
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER;RELATED=START:-PT5M
+DESCRIPTION:Reminder
+END:VALARM
+BEGIN:VALARM
+TRIGGER:-PT5M
+ACTION:EMAIL
+ATTENDEE:#{tevent.organizer}
+SUMMARY:#{tevent.summary}
+DESCRIPTION:#{tevent.description}
+TRIGGER:-PT5M
+END:VALARM
+END:VEVENT
+END:VCALENDAR
 EOL
             p alarmText
             res = nil
@@ -143,36 +145,36 @@ EOL
         
         def update event
             dings = """BEGIN:VCALENDAR
-    PRODID:Caldav.rb
-    VERSION:2.0
-    
-    BEGIN:VTIMEZONE
-    TZID:/Europe/Vienna
-    X-LIC-LOCATION:Europe/Vienna
-    BEGIN:DAYLIGHT
-    TZOFFSETFROM:+0100
-    TZOFFSETTO:+0200
-    TZNAME:CEST
-    DTSTART:19700329T020000
-    RRULE:FREQ=YEARLY;INTERVAL=1;BYDAY=-1SU;BYMONTH=3
-    END:DAYLIGHT
-    BEGIN:STANDARD
-    TZOFFSETFROM:+0200
-    TZOFFSETTO:+0100
-    TZNAME:CET
-    DTSTART:19701025T030000
-    RRULE:FREQ=YEARLY;INTERVAL=1;BYDAY=-1SU;BYMONTH=10
-    END:STANDARD
-    END:VTIMEZONE
-    
-    BEGIN:VEVENT
-    CREATED:#{event.created}
-    UID:#{event.uid}
-    SUMMARY:#{event.summary}
-    DTSTART;TZID=Europe/Vienna:#{event.dtstart}
-    DTEND;TZID=Europe/Vienna:#{event.dtend.rfc3339}
-    END:VEVENT
-    END:VCALENDAR"""
+PRODID:Caldav.rb
+VERSION:2.0
+
+BEGIN:VTIMEZONE
+TZID:/Europe/Vienna
+X-LIC-LOCATION:Europe/Vienna
+BEGIN:DAYLIGHT
+TZOFFSETFROM:+0100
+TZOFFSETTO:+0200
+TZNAME:CEST
+DTSTART:19700329T020000
+RRULE:FREQ=YEARLY;INTERVAL=1;BYDAY=-1SU;BYMONTH=3
+END:DAYLIGHT
+BEGIN:STANDARD
+TZOFFSETFROM:+0200
+TZOFFSETTO:+0100
+TZNAME:CET
+DTSTART:19701025T030000
+RRULE:FREQ=YEARLY;INTERVAL=1;BYDAY=-1SU;BYMONTH=10
+END:STANDARD
+END:VTIMEZONE
+
+BEGIN:VEVENT
+CREATED:#{event.created}
+UID:#{event.uid}
+SUMMARY:#{event.summary}
+DTSTART;TZID=Europe/Vienna:#{event.dtstart}
+DTEND;TZID=Europe/Vienna:#{event.dtend.rfc3339}
+END:VEVENT
+END:VCALENDAR"""
     
             res = nil
             __create_http.start {|http|
@@ -194,13 +196,27 @@ EOL
             }
             result = []
             xml = REXML::Document.new( res.body )
-            REXML::XPath.each( xml, '//calendar-data/', { "c"=>"urn:ietf:params:xml:ns:caldav"} ){ |c|
-                result += parseVcal( c.text )
+            #p res.body
+            REXML::XPath.each( xml, '//c:calendar-data/', { "c"=>"urn:ietf:params:xml:ns:caldav"} ){ |c|
+                p c.text
+                p parse_tasks( c.text )
+                result += parse_tasks( c.text )
             }
             return result
         end
         
-        def parseVcal( vcal )
+        def parse_tasks( vcal )
+            return_tasks = Array.new
+            cals = Icalendar.parse(vcal)
+            cals.each { |tcal|
+                tcal.todos.each { |ttask|  # FIXME
+                    return_tasks << ttask
+                }
+            }
+            return return_tasks
+        end
+
+        def parse_events( vcal )
             return_events = Array.new
             cals = Icalendar.parse(vcal)
             cals.each { |tcal|

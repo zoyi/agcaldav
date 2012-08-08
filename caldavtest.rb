@@ -22,10 +22,9 @@ class CalDAVTester
 
     def test_create_event
         myevent = Event.new
-        myevent.dtstart = DateTime.parse( '2012/08/08 09:45')
-        myevent.dtend = DateTime.parse( '2012/08/08 10:45')
-        myevent.summary = "Yo Yo YO"
-        
+        myevent.dtstart = DateTime.parse( '2012/08/11 09:45')
+        myevent.dtend = DateTime.parse( '2012/08/11 10:45')
+        myevent.summary = "Jo?"
         
         uuid, response = cal.create myevent
         
@@ -47,6 +46,7 @@ class CalDAVTester
     end
 
     def test_read_todo
+        puts '*' * 20 + ' TODO ' + '*' * 20
         res = cal.todo
         
         res.each{ |todo| 
@@ -55,6 +55,7 @@ class CalDAVTester
     end
     
     def test_report
+        puts '*' * 20 + ' EVENTS ' + '*' * 20
         p cal.report "20111201T000000", "20131231T000000"
     end
 
