@@ -3,6 +3,14 @@ module CalDAV
         include Icalendar
         attr_accessor :host, :port, :url, :user, :password, :ssl
 
+        def format=( fmt )
+            @format = fmt
+        end
+
+        def format
+            @format ||= Format::Debug.new
+        end
+
         def initialize( *args )
             case args.length
             when 3
@@ -17,6 +25,12 @@ module CalDAV
         def __init_from_uri( suri, user, password )
             uri = URI.new( suri )
             puts "FIXME"
+            @host     = uri.host
+            @port     = uri.port
+            @url      = uri.url
+            @user     = user
+            @password = password 
+            @ssl      = uri.port == 443
         end
 
         def __init_from_host_port( host, port, url, user, password )
@@ -44,12 +58,7 @@ module CalDAV
                 req.body = CalDAV::Request::ReportVEVENT.new( start, stop ).to_xml
                 res = http.request( req )
             }
-            result = []
-            xml = REXML::Document.new( res.body )
-            REXML::XPath.each( xml, '//c:calendar-data/', { "c"=>"urn:ietf:params:xml:ns:caldav"} ){ |c|
-                result += parse_events( c.text )
-            }
-            return result
+            format.parse_calendar( res.body )
         end
         
         def get uuid
@@ -60,8 +69,8 @@ module CalDAV
                 res = http.request( req )
             }
 
-            # FIXME: parse event/todo/vcard
-            return parse_events( res.body ), res
+            # FIXME: process HTTP code
+            format.parse_single( res.body )
         end
     
         def delete uuid
@@ -179,7 +188,7 @@ END:VCALENDAR"""
             res = nil
             __create_http.start {|http|
                 req = Net::HTTP::Put.new("#{@url}/#{event.uid}.ics", initheader = {'Content-Type'=>'text/calendar'} )
-                req.basic_auth @user, @passowrd
+                req.basic_auth @user, @password
                 req.body = dings
                 res = http.request( req )
             }
@@ -194,39 +203,8 @@ END:VCALENDAR"""
                 req.body = CalDAV::Request::ReportVTODO.new.to_xml
                 res = http.request( req )
             }
-            result = []
-            xml = REXML::Document.new( res.body )
-            #p res.body
-            REXML::XPath.each( xml, '//c:calendar-data/', { "c"=>"urn:ietf:params:xml:ns:caldav"} ){ |c|
-                p c.text
-                p parse_tasks( c.text )
-                result += parse_tasks( c.text )
-            }
-            return result
-        end
-        
-        def parse_tasks( vcal )
-            return_tasks = Array.new
-            cals = Icalendar.parse(vcal)
-            cals.each { |tcal|
-                tcal.todos.each { |ttask|  # FIXME
-                    return_tasks << ttask
-                }
-            }
-            return return_tasks
-        end
-
-        def parse_events( vcal )
-            return_events = Array.new
-            cals = Icalendar.parse(vcal)
-            cals.each { |tcal|
-                tcal.events.each { |tevent|
-                    if tevent.recurrence_id.to_s.empty? # skip recurring events
-                        return_events << tevent
-                    end
-                }
-            }
-            return return_events
+            # FIXME: process HTTP code
+            format.parse_todo( res.body )
         end
         
         def filterTimezone( vcal )

@@ -40,8 +40,9 @@ class CalDAVTester
     end
 
     def test_get_event( uuid )
-        ev, response = cal.get uuid
-        puts "GET Response #{response.code} #{response.message}: #{response.body}"
+        #ev, response = cal.get uuid
+        ev = cal.get( uuid )
+        #puts "GET Response #{response.code} #{response.message}: #{response.body}"
         puts ev
     end
 

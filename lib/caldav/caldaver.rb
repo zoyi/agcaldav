@@ -19,9 +19,12 @@ class CalDAVer
             o.on('-p', '--password',      String, 'Password')     { |p|   options[:password] = p }
             o.on('-u', '--user',          String, 'User (login)') { |l|   options[:login]    = l }
             o.on('--uri [STRING]',        String, 'Calendar URI') { |uri| options[:uri]      = uri }
+            o.on('--format [STRING]',     String, 'Format of output') { |fmt| options[:fmt]  = fmt }
             o.on('--command [STRING]',    String, 'Command')      { |c|   options[:command]  = command }
-            o.on('--begin [DATETIME]',    DateTime, 'Start time') { |dt|  options[:begin]    = dt }
-            o.on('--end [DATETIME]',      DateTime, 'End time')   { |dt|  options[:end]      = dt }
+            o.on('--begin [DATETIME]',    String, 'Start time') { |dt|  options[:begin]    = dt }
+            o.on('--end [DATETIME]',      String, 'End time')   { |dt|  options[:end]      = dt }
+            #o.on('--begin [DATETIME]',    DateTime, 'Start time') { |dt|  options[:begin]    = dt }
+            #o.on('--end [DATETIME]',      DateTime, 'End time')   { |dt|  options[:end]      = dt }
             o.on('-h') { help.call }
         end
 
