@@ -23,14 +23,14 @@ module CalDAV
         end
 
         def __init_from_uri( suri, user, password )
-            uri = URI.new( suri )
-            puts "FIXME"
+            uri = URI( suri )
             @host     = uri.host
             @port     = uri.port
-            @url      = uri.url
+            @url      = [ uri.scheme, '://', uri.host, uri.path ].join('') # FIXME: port?
             @user     = user
             @password = password 
-            @ssl      = uri.port == 443
+            @ssl      = uri.scheme == 'https'
+            p self
         end
 
         def __init_from_host_port( host, port, url, user, password )

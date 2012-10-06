@@ -3,6 +3,9 @@ require 'optparse'
 # caldav --user USER --password PASSWORD --uri URI --command COMMAND
 # caldav --user martin@solnet.cz --password test --uri https://mail.solnet.cz/caldav.php/martin.povolny@solnet.cz/test --command create_event 
 
+# caldav --command report --begin 2012-01-01 --end 2012-07-01 --format raw --user USER --password PASSWORD --uri https://in.solnet.cz/caldav.php/martin.povolny@solnet.cz/public
+# caldav --command get --user USER --password PASSWD --uri https://mail.solnet.cz/caldav.php/martin.povolny%40solnet.cz/public/ --uuid 64d0b933-e916-4755-9e56-2f4d0d9068cb
+
 module CalDAV
 
 class CalDAVer
@@ -39,19 +42,20 @@ class CalDAVer
     def run_args( args )
         options = {}
         @o = OptionParser.new do |o|
-            o.on('-p', '--password',      String, 'Password')     { |p|   options[:password] = p }
-            o.on('-u', '--user',          String, 'User (login)') { |l|   options[:login]    = l }
-            o.on('--uri [STRING]',        String, 'Calendar URI') { |uri| options[:uri]      = uri }
+            o.on('-p', '--password [STRING]', String, 'Password')     { |p|   options[:password] = p }
+            o.on('-u', '--user [STRING}',     String, 'User (login)') { |l|   options[:login]    = l }
+            o.on('--uri [STRING]',        String, 'Calendar URI') { |uri| options[:uri] = uri }
             o.on('--format [STRING]',     String, 'Format of output: raw,pretty,[debug]') { 
-                                                                    |fmt| options[:fmt]  = fmt }
-            o.on('--command [STRING]',    String, 'Command')      { |c|   options[:command]  = command }
+                                                                    |fmt| options[:fmt] = fmt }
+            o.on('--command [STRING]',    String, 'Command')      { |c|   options[:command] = c }
+            o.on('--uuid [STRING]',       String, 'UUID')         { |u|   options[:uuid] = u }
             # what to create
             o.on('--what [STRING]',       String, 'Event/task/contact') { |c| options[:command]  = command }
             o.on('--raw',                         'Read raw data (event/task/contact) from STDIN') { |raw|   options[:raw] = true }
             # report and event options
-            o.on('--begin [DATETIME]',    String, 'Start time')   { |dt|  options[:begin]    = dt }
-            o.on('--end [DATETIME]',      String, 'End time')     { |dt|  options[:end]      = dt }
-            o.on('--due [DATETIME]',      String, 'Due time')     { |dt|  options[:due]      = dt }
+            o.on('--begin [DATETIME]',    String, 'Start time')   { |dt|  options[:begin] = dt }
+            o.on('--end [DATETIME]',      String, 'End time')     { |dt|  options[:end]   = dt }
+            o.on('--due [DATETIME]',      String, 'Due time')     { |dt|  options[:due]   = dt }
             #o.on('--begin [DATETIME]',    DateTime, 'Start time') { |dt|  options[:begin]    = dt }
             #o.on('--end [DATETIME]',      DateTime, 'End time')   { |dt|  options[:end]      = dt }
             # event options
@@ -64,8 +68,7 @@ class CalDAVer
         @o.parse( args )
 
         print_help_and_exit if options[:command].to_s.empty? or options[:uri].to_s.empty?
-
-        cal = cal.new( options[:uri], options[:login], options[:password] )
+        cal = CalDAV::Client.new( options[:uri], options[:login], options[:password] )
 
         if options[:format]
             cal.format = case options[:format].intern
@@ -87,8 +90,9 @@ class CalDAVer
         when :modify
             obj = create_object( options )
         when :get
+            puts cal.get( options[:uuid] )
         when :report
-            cal.report( options[:begin], options[:end] )
+            puts cal.report( options[:begin], options[:end] )
         else
             print_help_and_exit
         end
