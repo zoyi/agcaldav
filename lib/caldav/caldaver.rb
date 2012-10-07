@@ -3,8 +3,8 @@ require 'optparse'
 # caldav --user USER --password PASSWORD --uri URI --command COMMAND
 # caldav --user martin@solnet.cz --password test --uri https://mail.solnet.cz/caldav.php/martin.povolny@solnet.cz/test --command create_event 
 
-# caldav --command report --begin 2012-01-01 --end 2012-07-01 --format raw --user USER --password PASSWORD --uri https://in.solnet.cz/caldav.php/martin.povolny@solnet.cz/public
-# caldav --command get --user USER --password PASSWD --uri https://mail.solnet.cz/caldav.php/martin.povolny%40solnet.cz/public/ --uuid 64d0b933-e916-4755-9e56-2f4d0d9068cb
+# caldav report --begin 2012-01-01 --end 2012-07-01 --format raw --user USER --password PASSWORD --uri https://in.solnet.cz/caldav.php/martin.povolny@solnet.cz/public
+# caldav get --user USER --password PASSWD --uri https://mail.solnet.cz/caldav.php/martin.povolny%40solnet.cz/public/ --uuid 64d0b933-e916-4755-9e56-2f4d0d9068cb
 
 module CalDAV
 
@@ -42,12 +42,13 @@ class CalDAVer
     def run_args( args )
         options = {}
         @o = OptionParser.new do |o|
+            o.banner = "Usage: caldaver [command] [options]"
             o.on('-p', '--password [STRING]', String, 'Password')     { |p|   options[:password] = p }
             o.on('-u', '--user [STRING}',     String, 'User (login)') { |l|   options[:login]    = l }
             o.on('--uri [STRING]',        String, 'Calendar URI') { |uri| options[:uri] = uri }
             o.on('--format [STRING]',     String, 'Format of output: raw,pretty,[debug]') { 
                                                                     |fmt| options[:fmt] = fmt }
-            o.on('--command [STRING]',    String, 'Command')      { |c|   options[:command] = c }
+            ##o.on('--command [STRING]',    String, 'Command')      { |c|   options[:command] = c }
             o.on('--uuid [STRING]',       String, 'UUID')         { |u|   options[:uuid] = u }
             # what to create
             o.on('--what [STRING]',       String, 'Event/task/contact') { |c| options[:command]  = command }
@@ -65,7 +66,7 @@ class CalDAVer
             o.on('-h') { print_help_and_exit }
         end
 
-        @o.parse( args )
+        options[:command] =  @o.parse( args )[0]
 
         print_help_and_exit if options[:command].to_s.empty? or options[:uri].to_s.empty?
         cal = CalDAV::Client.new( options[:uri], options[:login], options[:password] )

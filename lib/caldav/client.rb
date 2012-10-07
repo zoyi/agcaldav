@@ -30,7 +30,6 @@ module CalDAV
             @user     = user
             @password = password 
             @ssl      = uri.scheme == 'https'
-            p self
         end
 
         def __init_from_host_port( host, port, url, user, password )
