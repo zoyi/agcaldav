@@ -1,3 +1,3 @@
 CalDAV library
 
-based on 4fthawaiian/ruby-caldav and collectiveidea/caldav
+based on 4fthawaiian/ruby-caldav and collectiveidea/caldav and martinpovolny/ruby-caldav
