@@ -11,7 +11,7 @@ Gem::Specification.new do |s|
 
   s.license     = 'MIT'
 
-  s.homepage    = 'https://github.com/agilastic/caldav2'
+  s.homepage    = 'https://github.com/agilastic/agcaldav'
   s.authors     = "Alex Ebeling-Hoppe"
   s.email       = "ebeling-hoppe@agilastic.de"
   # forked from "Martin Povolny" => "https://github.com/martinpovolny", 
