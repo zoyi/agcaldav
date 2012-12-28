@@ -1,4 +1,4 @@
-module CalDAV
+module AGCalDAV
     class Client
         include Icalendar
         attr_accessor :host, :port, :url, :user, :password, :ssl
@@ -11,38 +11,28 @@ module CalDAV
             @format ||= Format::Debug.new
         end
 
-        def initialize( *args )
-            case args.length
-            when 3
-                __init_from_uri( *args )
-            when 5
-                __init_from_host_port( *args )
-            else
-                raise "#{self.class.to_s}: invalid number of arguments: #{args.length}"
-            end
-        end
+        def initialize( data )                                        
 
-        def __init_from_uri( suri, user, password )
-            uri = URI( suri )
+            proxy_uri   = URI(data["proxy_uri"])
+            @proxy_host = proxy_uri.host 
+            @proxy_port = proxy_uri.port.to_i
+            @proxy_url  = [ proxy_uri.scheme, '://', proxy_uri.host, ':', proxy_uri.port ].join('') 
+
+            uri = URI(data["uri"])
             @host     = uri.host
-            @port     = uri.port
-            @url      = [ uri.scheme, '://', uri.host, uri.path ].join('') # FIXME: port?
-            @user     = user
-            @password = password 
-            @ssl      = uri.scheme == 'https'
-        end
-
-        def __init_from_host_port( host, port, url, user, password )
-           @host     = host
-           @port     = port
-           @url      = url
-           @user     = user
-           @password = password 
-           @ssl      = port == 443
+            @port     = uri.port.to_i
+            @url      = [ uri.scheme, '://', uri.host, ':', uri.port, uri.path ].join('') 
+            @user     = data["user"]
+            @password = data["password"] 
+            @ssl      = uri.scheme == 'https'            
         end
     
         def __create_http
+          if @proxy_uri.blank?
             http = Net::HTTP.new(@host, @port)
+          else        
+            http = Net::HTTP.new(@host, @port, @proxy_host, @proxy_port)
+          end
             http.use_ssl = @ssl
             http.verify_mode = OpenSSL::SSL::VERIFY_NONE
             #http.set_debug_output $stderr
@@ -54,7 +44,7 @@ module CalDAV
             __create_http.start {|http|
                 req = Net::HTTP::Report.new(@url, initheader = {'Content-Type'=>'application/xml'} )
                 req.basic_auth @user, @password
-                req.body = CalDAV::Request::ReportVEVENT.new(DateTime.parse(datetime_start).strftime("%Y%m%dT%H%M"), 
+                req.body = AGCalDAV::Request::ReportVEVENT.new(DateTime.parse(datetime_start).strftime("%Y%m%dT%H%M"), 
                                                              DateTime.parse(datetime_stop).strftime("%Y%m%dT%H%M") ).to_xml
                 res = http.request( req )
             }
@@ -68,8 +58,8 @@ module CalDAV
                 req.basic_auth @user, @password
                 res = http.request( req )
             }
-
-            # FIXME: process HTTP code
+            raise AuthenticationError if res.code.to_i == 401
+            raise APIError if res.code.to_i >= 500
             format.parse_single( res.body )
         end
     
@@ -87,7 +77,7 @@ module CalDAV
             event.dtstart = event.dtstart.strftime("%Y%m%dT%H%M%S")
             event.dtend = event.dtend.strftime("%Y%m%dT%H%M%S")
             cal = Calendar.new
-            cal.event = Event.new(event)
+            cal.event = event if event.is_a? Event
             c = cal.to_ical
             res = nil
             http = Net::HTTP.new(@host, @port) 
@@ -102,7 +92,7 @@ module CalDAV
         end
     
         def add_alarm tevent, altCal="Calendar"
-        #[#<Icalendar::Alarm:0x10b9d1b90 @name=\"VALARM\", @components={}, @properties={\"trigger\"=>\"-PT5M\", \"action\"=>\"DISPLAY\", \"description\"=>\"\"}>]    
+            # FIXME create icalendar event -> cal.event.new (tevent)  
             dtstart_string = ( Time.parse(tevent.dtstart.to_s) + Time.now.utc_offset.to_i.abs ).strftime "%Y%m%dT%H%M%S"
             dtend_string = ( Time.parse(tevent.dtend.to_s) + Time.now.utc_offset.to_i.abs ).strftime "%Y%m%dT%H%M%S"
             alarmText = <<EOL
@@ -193,7 +183,7 @@ END:VCALENDAR"""
             __create_http.start {|http|
                 req = Net::HTTP::Report.new(@url, initheader = {'Content-Type'=>'application/xml'} )
                 req.basic_auth @user, @password
-                req.body = CalDAV::Request::ReportVTODO.new.to_xml
+                req.body = AGCalDAV::Request::ReportVTODO.new.to_xml
                 res = http.request( req )
             }
             # FIXME: process HTTP code
@@ -211,4 +201,9 @@ END:VCALENDAR"""
             return data
         end
     end
+
+  class AGCalDAVError < StandardError
+  end
+  class AuthenticationError < AGCalDAVError; end
+  class APIError            < AGCalDAVError; end
 end

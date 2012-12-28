@@ -1,4 +1,4 @@
-module CalDAV
+module AGCalDAV
   module Filter
     class Base
       attr_accessor :parent, :child

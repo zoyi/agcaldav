@@ -7,7 +7,7 @@ require 'icalendar'
 require 'time'
 
 ['client.rb', 'request.rb', 'net.rb', 'query.rb', 'filter.rb', 'format.rb'].each do |f|
-    require File.join( File.dirname(__FILE__), 'caldav', f )
+    require File.join( File.dirname(__FILE__), 'agcaldav', f )
 end
 
 class Event

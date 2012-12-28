@@ -1,6 +1,6 @@
 require 'builder'
 
-module CalDAV
+module AGCalDAV
     NAMESPACES = { "xmlns:d" => 'DAV:', "xmlns:c" => "urn:ietf:params:xml:ns:caldav" }
     module Request
         class Base

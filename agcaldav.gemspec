@@ -1,11 +1,11 @@
 # -*- encoding: utf-8 -*-
-require File.expand_path('../lib/caldav/version', __FILE__)
+require File.expand_path('../lib/agcaldav/version', __FILE__)
 
 Gem::Specification.new do |s|
   s.name        = "agcaldav"
-  s.version     = CalDAV::VERSION
-  s.summary     = "new Ruby CalDAV client"
-  s.description = "yet another new Ruby client for CalDAV calendar and tasks."
+  s.version     = AGCalDAV::VERSION
+  s.summary     = "Ruby CalDAV client"
+  s.description = "yet another great Ruby client for CalDAV calendar and tasks."
 
   s.required_ruby_version     = '>= 1.9.2'
 
@@ -22,7 +22,8 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency 'uuid'
   s.add_runtime_dependency 'builder'
   #s.add_dependency "json"
-  #s.add_development_dependency "rspec"  
+  s.add_development_dependency "rspec"  
+  # sorry for no tests atm :-/
 
   s.files         = `git ls-files`.split("\n")
   s.require_paths = ["lib"]
