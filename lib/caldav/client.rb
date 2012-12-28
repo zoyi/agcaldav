@@ -49,12 +49,13 @@ module CalDAV
             http
         end
     
-        def report start, stop
+        def report datetime_start, datetime_stop            
             res = nil
             __create_http.start {|http|
                 req = Net::HTTP::Report.new(@url, initheader = {'Content-Type'=>'application/xml'} )
                 req.basic_auth @user, @password
-                req.body = CalDAV::Request::ReportVEVENT.new( start, stop ).to_xml
+                req.body = CalDAV::Request::ReportVEVENT.new(DateTime.parse(datetime_start).strftime("%Y%m%dT%H%M"), 
+                                                             DateTime.parse(datetime_stop).strftime("%Y%m%dT%H%M") ).to_xml
                 res = http.request( req )
             }
             format.parse_calendar( res.body )
@@ -81,30 +82,23 @@ module CalDAV
         end
     
         def create event
-            nowstr = DateTime.now.strftime "%Y%m%dT%H%M%SZ"
-            uuid   = UUID.generate
-            dings  = """BEGIN:VCALENDAR
-PRODID:Caldav.rb
-VERSION:2.0
-BEGIN:VEVENT
-CREATED:#{nowstr}
-UID:#{uuid}
-SUMMARY:#{event.summary}
-DTSTART:#{event.dtstart.strftime("%Y%m%dT%H%M%S")}
-DTEND:#{event.dtend.strftime("%Y%m%dT%H%M%S")}
-END:VEVENT
-END:VCALENDAR"""
-
+            event.uid = UUID.generate
+            event.dtstamp = DateTime.now.strftime "%Y%m%dT%H%M%SZ"
+            event.dtstart = event.dtstart.strftime("%Y%m%dT%H%M%S")
+            event.dtend = event.dtend.strftime("%Y%m%dT%H%M%S")
+            cal = Calendar.new
+            cal.event = Event.new(event)
+            c = cal.to_ical
             res = nil
             http = Net::HTTP.new(@host, @port) 
             __create_http.start { |http|
-                req = Net::HTTP::Put.new("#{@url}/#{uuid}.ics")
+                req = Net::HTTP::Put.new("#{@url}/#{event.uid}.ics")
                 req['Content-Type'] = 'text/calendar'
                 req.basic_auth @user, @password
                 req.body = dings
                 res = http.request( req )
             }
-            return uuid, res
+            return event.uid, res
         end
     
         def add_alarm tevent, altCal="Calendar"

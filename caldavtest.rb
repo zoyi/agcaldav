@@ -4,10 +4,10 @@ class CalDAVTester
 
     def initialize
         $caldav = {
-            :host     => 'mail.server.com',
-            :port     => 443,
-            :url      => '/caldav.php/martin.povolny@solnet.cz/test',
-            :user     => 'user@test.com',
+            :host     => 'localhost',
+            :port     => 5232,
+            :url      => '/user/calendar/',
+            :user     => 'user',
             :password => 'yourpassword'
         }
         begin
@@ -96,5 +96,5 @@ t.test_delete_event( uuid )
 
 t.test_report
 t.test_read_todo
-#t.test_query
+t.test_query
 
