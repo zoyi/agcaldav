@@ -2,7 +2,7 @@
 require File.expand_path('../lib/caldav/version', __FILE__)
 
 Gem::Specification.new do |s|
-  s.name        = "caldav2"
+  s.name        = "agcaldav"
   s.version     = CalDAV::VERSION
   s.summary     = "new Ruby CalDAV client"
   s.description = "yet another new Ruby client for CalDAV calendar and tasks."
