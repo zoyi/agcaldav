@@ -82,4 +82,20 @@ MIT
 
 ####Contributors
 
-{Check all contributors}[https://github.com/agilastic/agcaldav/contributors]
+[Check all contributors][1]
+
+
+
+Contributing
+------------
+
+1. Fork it.
+2. Create a branch (`git checkout -b my_feature_branch`)
+3. Commit your changes (`git commit -am "bugfixed abc..."`)
+4. Push to the branch (`git push origin my_feature_branch`)
+5. Open a [Pull Request][1]
+6. Enjoy a refreshing Club Mate and wait
+
+[c]: https://github.com/agilastic/agcaldav/contributors
+[1]: https://github.com/agilastic/agcaldav/pull/
+
