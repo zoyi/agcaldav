@@ -40,17 +40,24 @@ module AgCalDAV
     end
 
     def find_events data
-      datetime_start = data[:start]
-      datetime_stop  = data[:end]
+      result = ""
       res = nil
       __create_http.start {|http|
         req = Net::HTTP::Report.new(@url, initheader = {'Content-Type'=>'application/xml'} )
         req.basic_auth @user, @password
-        req.body = AgCalDAV::Request::ReportVEVENT.new(DateTime.parse(datetime_start).strftime("%Y%m%dT%H%M"),
-                                                       DateTime.parse(datetime_stop).strftime("%Y%m%dT%H%M") ).to_xml
-        res = http.request( req )
+        req.body = AgCalDAV::Request::ReportVEVENT.new(DateTime.parse(data[:start]).strftime("%Y%m%dT%H%M"),
+                                                       DateTime.parse(data[:end]).strftime("%Y%m%dT%H%M") ).to_xml
+        res = http.request(req)
+        s = res.body
+        result = ""
+        xml = REXML::Document.new(s)
+        REXML::XPath.each( xml, '//c:calendar-data/', {"c"=>"urn:ietf:params:xml:ns:caldav"} ){|c| result << c.text}
+        r = Icalendar.parse(result)
+        r.first
+
       }
-      format.parse_calendar( res.body ) #TODO
+
+     
     end
 
     def find_event uuid
@@ -62,7 +69,8 @@ module AgCalDAV
       }
       raise AuthenticationError if res.code.to_i == 401
       raise APIError if res.code.to_i >= 500
-      format.parse_events(res.body)      
+      r = Icalendar.parse(res.body)      
+      r.first
     end
 
     def delete_event uuid
@@ -102,7 +110,8 @@ module AgCalDAV
       }
       raise AuthenticationError if res.code.to_i == 401
       raise APIError if res.code.to_i >= 500
-      {:uid => uuid, :cal => c, :cal_string => cstring, :response_code => res.code} #TODO
+      find_event uuid
+      #{:uid => uuid, :cal => c, :cal_string => cstring, :response_code => res.code} #TODO
     end
 
     def add_alarm tevent, altCal="Calendar"

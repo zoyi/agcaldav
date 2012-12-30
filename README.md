@@ -27,23 +27,47 @@ Alternatively, the proxy parameters can be specified:
 
     result = cal.create_event(:start => "2012-12-29 10:00", :end => "2012-12-30 12:00", :title => "12345", :description => "sdkvjsdf sdkf sdkfj sdkf dsfj")
 
-Determine Event UID:
+Analyze result:
+    
+    >> result.class
+    => Icalendar::Calendar
 
-    result[:uid]
+    >> result.events.count
+    => 1
+
+    >> result.events.first
+    => #<Icalendar::Event:0x007ff653b47520 @name="VEVENT", @components={}, @properties={"sequence"=>0, "dtstamp"=>#<DateTime: 2012-12-30T19:59:04+00:00 (26527957193/10800,0/1,2299161)>, "description"=>"sdkvjsdf sdkf sdkfj sdkf dsfj", "dtend"=>#<DateTime: 2012-12-30T12:00:00+00:00 (2456292/1,0/1,2299161)>, "dtstart"=>#<DateTime: 2012-12-29T10:00:00+00:00 (29475491/12,0/1,2299161)>, "summary"=>"12345", "uid"=>"e795c480-34e0-0130-7d1d-109add70606c", "x-radicale_name"=>"e795c480-34e0-0130-7d1d-109add70606c.ics"}>
+
+get UID of this Event:
+    >> result.events.first.uid
+    => "e795c480-34e0-0130-7d1d-109add70606c"
 
 
 Find Event:
     
-    r = cal.find_event(result[:uid])
+    r = cal.find_event("e795c480-34e0-0130-7d1d-109add70606c")
+    
+    >> result.class
+    => Icalendar::Calendar
 
 
 Find Events within time interval:
 
     result = cal.find_events(:start => "2012-10-01 08:00", :end => "2013-01-01")
-    #TODO.... (no XML -> Icalendar with multiple events....)
 
 
+####TODO's
 
-... next tomorrow ...
+###############################################################
+#                                                             #
+#   TODO :                                                    #
+#       1. find and notify if overlapping events              #
+#       2. "create_event" check for UUID is really unique     #
+#       3. errorhandling & code cleanup                       #
+#                                                             #
+###############################################################
 
 
+####Licence
+
+ -> MIT
