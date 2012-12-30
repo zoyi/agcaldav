@@ -1,64 +1,52 @@
 module AgCalDAV
-    module Format
-        class Raw
-            def method_missing(m, *args, &block)
-                return *args
-            end
-        end
-
-        class Debug < Raw
-        end
-
-        class Pretty < Raw
-            def parse_calendar( body )
-                result = []
-                xml = REXML::Document.new( res.body )
-                REXML::XPath.each( xml, '//c:calendar-data/', { "c"=>"urn:ietf:params:xml:ns:caldav"} ){ |c|
-                    result += parse_events( c.text )
-                }
-                return result
-            end
-
-            def parse_todo( body )
-                result = []
-                xml = REXML::Document.new( body )
-                REXML::XPath.each( xml, '//c:calendar-data/', { "c"=>"urn:ietf:params:xml:ns:caldav"} ){ |c|
-                    p c.text
-                    p parse_tasks( c.text )
-                    result += parse_tasks( c.text )
-                }
-                return result
-            end
-
-            def parse_tasks( vcal )
-                return_tasks = Array.new
-                cals = Icalendar.parse(vcal)
-                cals.each { |tcal|
-                    tcal.todos.each { |ttask|  # FIXME
-                        return_tasks << ttask
-                    }
-                }
-                return return_tasks
-            end
-
-            def parse_events( vcal )
-                return_events = Array.new
-                cals = Icalendar.parse(vcal)
-                cals.each { |tcal|
-                    tcal.events.each { |tevent|
-                        if tevent.recurrence_id.to_s.empty? # skip recurring events
-                            return_events << tevent
-                        end
-                    }
-                }
-                return return_events
-            end
-
-            def parse_single( body )
-                # FIXME: parse event/todo/vcard
-                parse_events( body )
-            end
-        end
+  module Format
+    class Raw
+      def method_missing(m, *args, &block)
+        return *args
+      end
     end
-end
 
+    class Debug < Raw
+    end
+
+    class Pretty < Raw
+      def parse_calendar(s)
+        result = []
+        xml = REXML::Document.new(s)
+        REXML::XPath.each( xml, '//c:calendar-data/', {"c"=>"urn:ietf:params:xml:ns:caldav"} ){|c| result << c.text}
+        Icalendar.parse(result)
+      end
+
+      def parse_todo( body )
+        result = []
+        xml = REXML::Document.new( body )
+        REXML::XPath.each( xml, '//c:calendar-data/', { "c"=>"urn:ietf:params:xml:ns:caldav"} ){ |c|
+          p c.text
+          p parse_tasks( c.text )
+          result += parse_tasks( c.text )
+        }
+        return result
+      end
+
+      def parse_tasks( vcal )
+        return_tasks = Array.new
+        cals = Icalendar.parse(vcal)
+        cals.each { |tcal|
+          tcal.todos.each { |ttask|  # FIXME
+            return_tasks << ttask
+          }
+        }
+        return return_tasks
+      end
+
+      def parse_events( vcal )
+        Icalendar.parse(vcal)        
+      end
+
+      def parse_single( body )
+        # FIXME: parse event/todo/vcard
+        parse_events( body )
+      end
+    end
+  end
+end
