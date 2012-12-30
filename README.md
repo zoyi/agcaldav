@@ -23,7 +23,7 @@ Alternatively, the proxy parameters can be specified:
 	cal = AgCalDAV::Client.new(:uri => "http://localhost:5232/user/calendar",:user => "user" , :password => "password, :proxy_uri => "http://my-proxy.com:8080")
 
 
-####Create an Event and save it
+####Create an Event
 
     result = cal.create_event(:start => "2012-12-29 10:00", :end => "2012-12-30 12:00", :title => "12345", :description => "sdkvjsdf sdkf sdkfj sdkf dsfj")
 
@@ -43,32 +43,43 @@ get UID of this Event:
     => "e795c480-34e0-0130-7d1d-109add70606c"
 
 
-Find Event:
-    
+####Find an Event  (via UUID)  
+
     r = cal.find_event("e795c480-34e0-0130-7d1d-109add70606c")
     
     >> result.class
     => Icalendar::Calendar
 
 
-Find Events within time interval:
+####Find Events within time interval
 
     result = cal.find_events(:start => "2012-10-01 08:00", :end => "2013-01-01")
 
 
 ####TODO's
 
-'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-''                                                             ''
-''   TODO :                                                    ''
-''       1. find and notify if overlapping events              ''
-''       2. "create_event" check for UUID is really unique     ''
-''       3. errorhandling & code cleanup                       ''
-''                                                             ''
-'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+1. find and notify if overlapping events              
+2. "create_event" check for UUID is really unique     
+3. errorhandling & code cleanup                       
+                                                             
 
 
+####Testing
 
+agcaldav will use RSpec for its test coverage. Inside the gem
+directory, you can run the specs for RoR 3.x with:
+
+  rake spec 
+(will be implemented in > v0.2.5)  
+
+
+ 
 ####Licence
 
- -> MIT
+MIT
+
+
+
+####Contributors
+
+{Check all contributors}[https://github.com/agilastic/agcaldav/contributors]
