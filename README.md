@@ -45,7 +45,7 @@ get UID of this Event:
 
 ####Find an Event  (via UUID)  
 
-    r = cal.find_event("e795c480-34e0-0130-7d1d-109add70606c")
+    result = cal.find_event("e795c480-34e0-0130-7d1d-109add70606c")
     
     >> result.class
     => Icalendar::Calendar
