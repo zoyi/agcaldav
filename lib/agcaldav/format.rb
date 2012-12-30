@@ -1,4 +1,4 @@
-module AGCalDAV
+module AgCalDAV
     module Format
         class Raw
             def method_missing(m, *args, &block)
