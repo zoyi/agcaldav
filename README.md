@@ -82,7 +82,7 @@ MIT
 
 ####Contributors
 
-[Check all contributors][1]
+[Check all contributors][c]
 
 
 
