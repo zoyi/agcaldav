@@ -58,14 +58,15 @@ Find Events within time interval:
 
 ####TODO's
 
-###############################################################
-#                                                             #
-#   TODO :                                                    #
-#       1. find and notify if overlapping events              #
-#       2. "create_event" check for UUID is really unique     #
-#       3. errorhandling & code cleanup                       #
-#                                                             #
-###############################################################
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+''                                                             ''
+''   TODO :                                                    ''
+''       1. find and notify if overlapping events              ''
+''       2. "create_event" check for UUID is really unique     ''
+''       3. errorhandling & code cleanup                       ''
+''                                                             ''
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
 
 
 ####Licence
