@@ -13,15 +13,9 @@ module AgCalDAV
       def parse_calendar(s)
         result = ""
         xml = REXML::Document.new(s)
-        puts "-"*10
-        p s
-        puts "-"*10
+
         REXML::XPath.each( xml, '//c:calendar-data/', {"c"=>"urn:ietf:params:xml:ns:caldav"} ){|c| result << c.text}
         r = Icalendar.parse(result)
-
-        puts "."*10
-        p r 
-        puts "."*10
         r
       end
 
