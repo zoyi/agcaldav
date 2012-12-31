@@ -21,9 +21,7 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency 'icalendar'
   s.add_runtime_dependency 'uuid'
   s.add_runtime_dependency 'builder'
-  #s.add_dependency "json"
   s.add_development_dependency "rspec"  
-  # sorry for no tests atm :-/
 
   s.files         = `git ls-files`.split("\n")
   s.require_paths = ["lib"]

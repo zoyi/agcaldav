@@ -48,16 +48,13 @@ module AgCalDAV
         req.body = AgCalDAV::Request::ReportVEVENT.new(DateTime.parse(data[:start]).strftime("%Y%m%dT%H%M"),
                                                        DateTime.parse(data[:end]).strftime("%Y%m%dT%H%M") ).to_xml
         res = http.request(req)
-        s = res.body
+      } 
+        errorhandling res
         result = ""
-        xml = REXML::Document.new(s)
+        xml = REXML::Document.new(res.body)
         REXML::XPath.each( xml, '//c:calendar-data/', {"c"=>"urn:ietf:params:xml:ns:caldav"} ){|c| result << c.text}
         r = Icalendar.parse(result)
-        r.first
-
-      }
-
-     
+        r.first.events
     end
 
     def find_event uuid
@@ -66,26 +63,33 @@ module AgCalDAV
         req = Net::HTTP::Get.new("#{@url}/#{uuid}.ics")
         req.basic_auth @user, @password
         res = http.request( req )
-      }
-      raise AuthenticationError if res.code.to_i == 401
-      raise APIError if res.code.to_i >= 500
-      r = Icalendar.parse(res.body)      
-      r.first
+      }  
+      errorhandling res
+      r = Icalendar.parse(res.body)
+      r.first.events.first
     end
 
     def delete_event uuid
+      res = nil
       __create_http.start {|http|
         req = Net::HTTP::Delete.new("#{@url}/#{uuid}.ics")
         req.basic_auth @user, @password
         res = http.request( req )
       }
+      errorhandling res
+      if res.code.to_i == 200
+        return true
+      else
+        return false
+      end
     end
 
     def create_event event
       c = Calendar.new
       uuid = UUID.new.generate
+      raise DuplicateError if entry_with_uuid_exists?(uuid)
       c.event do
-        uid           uuid  # still a BUG
+        uid           uuid 
         dtstart       DateTime.parse(event[:start])
         dtend         DateTime.parse(event[:end])
         duration      event[:duration]
@@ -96,7 +100,6 @@ module AgCalDAV
         geo_location  event[:geo_location]
         status        event[:status]
       end
-      c.publish
       c.event.uid = uuid
       cstring = c.to_ical
       res = nil
@@ -108,54 +111,124 @@ module AgCalDAV
         req.body = cstring
         res = http.request( req )
       }
-      raise AuthenticationError if res.code.to_i == 401
-      raise APIError if res.code.to_i >= 500
+      errorhandling res
       find_event uuid
-      #{:uid => uuid, :cal => c, :cal_string => cstring, :response_code => res.code} #TODO
+    end
+
+    def update_event uuid, event
+      #TODO... fix me
+      if delete_event uuid
+        create_event event
+      else
+        return false
+      end
     end
 
     def add_alarm tevent, altCal="Calendar"
-      # FIXME create icalendar event -> cal.event.new (tevent)
-
-      # TODO
-
-
-
-
+    
     end
 
-    def update event
-      # FIXME old one not neat
+   
 
-      # TODO
-    end
 
-    def todo
+
+
+
+
+
+    def find_todo uuid
       res = nil
+      __create_http.start {|http|
+        req = Net::HTTP::Get.new("#{@url}/#{uuid}.ics")
+        req.basic_auth @user, @password
+        res = http.request( req )
+      }  
+      errorhandling res
+      r = Icalendar.parse(res.body)
+      r.first.todos.first
+    end
+
+
+
+
+
+    def create_todo todo
+      c = Calendar.new
+      uuid = UUID.new.generate
+      raise DuplicateError if entry_with_uuid_exists?(uuid)
+      c.todo do
+        uid           uuid 
+        start         DateTime.parse(todo[:start])
+        duration      todo[:duration]
+        summary       todo[:title]
+        description   todo[:description]
+        klass         todo[:accessibility] #PUBLIC, PRIVATE, CONFIDENTIAL
+        location      todo[:location]
+        percent       todo[:percent]
+        priority      todo[:priority]
+        url           todo[:url]
+        geo           todo[:geo_location]
+        status        todo[:status]
+      end
+      c.todo.uid = uuid
+      cstring = c.to_ical
+      res = nil
+      http = Net::HTTP.new(@host, @port)
+      __create_http.start { |http|
+        req = Net::HTTP::Put.new("#{@url}/#{uuid}.ics")
+        req['Content-Type'] = 'text/calendar'
+        req.basic_auth @user, @password
+        req.body = cstring
+        res = http.request( req )
+      }
+      errorhandling res
+      find_todo uuid
+    end
+
+    def create_todo
+      res = nil
+      raise DuplicateError if entry_with_uuid_exists?(uuid)
+
       __create_http.start {|http|
         req = Net::HTTP::Report.new(@url, initheader = {'Content-Type'=>'application/xml'} )
         req.basic_auth @user, @password
         req.body = AgCalDAV::Request::ReportVTODO.new.to_xml
         res = http.request( req )
       }
-      # FIXME: process HTTP code
+      errorhandling res 
       format.parse_todo( res.body )
     end
 
-    def filterTimezone( vcal )
-      data = ""
-      inTZ = false
-      vcal.split("\n").each{ |l|
-        inTZ = true if l.index("BEGIN:VTIMEZONE")
-        data << l+"\n" unless inTZ
-        inTZ = false if l.index("END:VTIMEZONE")
-      }
-      return data
+    private
+    def entry_with_uuid_exists? uuid
+      res = nil
+      __create_http.start {|http|
+        req = Net::HTTP::Get.new("#{@url}/#{uuid}.ics")
+        req.basic_auth @user, @password
+        res = http.request( req )
+      }      
+      if res.body.empty?
+        return false
+      else
+        return true
+      end
+    end
+
+    def  errorhandling response   
+      raise AuthenticationError if response.code.to_i == 401
+      raise NotExistError if response.code.to_i == 410 
+      raise APIError if response.code.to_i >= 500
     end
   end
+
+
+
+
 
   class AgCalDAVError < StandardError
   end
   class AuthenticationError < AgCalDAVError; end
+  class DuplicateError      < AgCalDAVError; end
   class APIError            < AgCalDAVError; end
+  class NotExistError       < AgCalDAVError; end
 end
