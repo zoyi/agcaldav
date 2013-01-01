@@ -1,6 +1,8 @@
 #Ruby CalDAV library named "agcaldav"
 **agcaldav is a CalDAV library based on martinpovolny/ruby-caldav and 4fthawaiian/ruby-caldav and collectiveidea/caldav**
 
+**Please keep in mind, agcaldav ist still under heavy development and still not finished...**
+
 ##Usage Events
 
 First, you've to install the gem
@@ -34,9 +36,6 @@ Analyze result:
    
     >> result.class
     => Icalendar::Event
-
-    >> result.count
-    => 1
 
    
 get UID of this Event:
@@ -91,7 +90,7 @@ Have a look tomorrow...
 
 
 
-####Work to be done ...
+##Work to be done ...
 
 1. find and notify if overlapping events              
 2. code cleanup -> more ActiveRecord style    
@@ -99,7 +98,7 @@ Have a look tomorrow...
                                                              
 
 
-####Testing
+##Testing
 
 agcaldav will use RSpec for its test coverage. Inside the gem
 directory, you can run the specs for RoR 3.x with:
@@ -109,20 +108,16 @@ directory, you can run the specs for RoR 3.x with:
 
 
  
-####Licence
+##Licence
 
 MIT
 
 
 
-####Contributors
+##Contributors
 
 [Check all contributors][c]
 
-
-
-Contributing
-------------
 
 1. Fork it.
 2. Create a branch (`git checkout -b my_feature_branch`)

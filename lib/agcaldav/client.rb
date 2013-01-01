@@ -53,8 +53,13 @@ module AgCalDAV
         result = ""
         xml = REXML::Document.new(res.body)
         REXML::XPath.each( xml, '//c:calendar-data/', {"c"=>"urn:ietf:params:xml:ns:caldav"} ){|c| result << c.text}
-        r = Icalendar.parse(result)
-        r.first.events
+        r = Icalendar.parse(result)      
+        unless r.empty?
+        #  r.first.events.delete_at 0
+          r.first.events 
+        else
+          return false
+        end
     end
 
     def find_event uuid
@@ -66,7 +71,13 @@ module AgCalDAV
       }  
       errorhandling res
       r = Icalendar.parse(res.body)
-      r.first.events.first
+      unless r.empty?
+        r.first.events.first 
+      else
+        return false
+      end
+
+      
     end
 
     def delete_event uuid
@@ -86,12 +97,16 @@ module AgCalDAV
 
     def create_event event
       c = Calendar.new
+      c.events = []
       uuid = UUID.new.generate
       raise DuplicateError if entry_with_uuid_exists?(uuid)
       c.event do
         uid           uuid 
         dtstart       DateTime.parse(event[:start])
         dtend         DateTime.parse(event[:end])
+        categories    event[:categories]# Array
+        contacts       event[:contacts] # Array
+        attendees      event[:attendees]# Array
         duration      event[:duration]
         summary       event[:title]
         description   event[:description]
@@ -100,7 +115,6 @@ module AgCalDAV
         geo_location  event[:geo_location]
         status        event[:status]
       end
-      c.event.uid = uuid
       cstring = c.to_ical
       res = nil
       http = Net::HTTP.new(@host, @port)
