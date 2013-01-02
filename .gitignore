@@ -1,2 +1,3 @@
 caldaver-test.sh
 *.gem
+*.tmp
