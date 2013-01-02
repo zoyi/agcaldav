@@ -41,6 +41,7 @@ module AgCalDAV
 
     def find_events data
       result = ""
+      events = []
       res = nil
       __create_http.start {|http|
         req = Net::HTTP::Report.new(@url, initheader = {'Content-Type'=>'application/xml'} )
@@ -55,8 +56,12 @@ module AgCalDAV
         REXML::XPath.each( xml, '//c:calendar-data/', {"c"=>"urn:ietf:params:xml:ns:caldav"} ){|c| result << c.text}
         r = Icalendar.parse(result)      
         unless r.empty?
-        #  r.first.events.delete_at 0
-          r.first.events 
+          r.each do |calendar|
+            calendar.events.each do |event|
+              events << event
+            end
+          end
+          events
         else
           return false
         end
