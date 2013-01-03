@@ -70,9 +70,9 @@ get UID of this Event:
 ####Update Event
 
     event = {:start => "2012-12-29 10:00", :end => "2012-12-30 12:00", :title => "12345", :description => "sdkvjsdf sdkf sdkfj sdkf dsfj"}
-    c = cal.update_event("e795c480-34e0-0130-7d1d-109add70606c", event)
-
-    # not nice ...
+    # set UUID 
+    event[:uid] => "e795c480-34e0-0130-7d1d-109add70606c"
+    c = cal.update_event(event)
 
 
 
