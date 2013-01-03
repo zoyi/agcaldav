@@ -134,9 +134,9 @@ module AgCalDAV
       find_event uuid
     end
 
-    def update_event uuid, event
+    def update_event event
       #TODO... fix me
-      if delete_event uuid
+      if delete_event event[:uid]
         create_event event
       else
         return false

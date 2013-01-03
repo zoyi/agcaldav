@@ -1,0 +1,4 @@
+= v0.2.5.2
+
+* client.update_event *args* changed. UID has to be provided 
+  now ->  client.update_event(:uid => "123", ...)
