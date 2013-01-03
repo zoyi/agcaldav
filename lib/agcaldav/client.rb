@@ -46,7 +46,7 @@ module AgCalDAV
       __create_http.start {|http|
         req = Net::HTTP::Report.new(@url, initheader = {'Content-Type'=>'application/xml'} )
         req.basic_auth @user, @password
-        req.body = AgCalDAV::Request::ReportVEVENT.new(DateTime.parse(data[:start]).strftime("%Y%m%dT%H%M"),
+        req.body = AgCalDAV::Request::ReportVEVENT.new(DateTime.parse(data[:start]).strftime("%Y%m%dT%H%M"), 
                                                        DateTime.parse(data[:end]).strftime("%Y%m%dT%H%M") ).to_xml
         res = http.request(req)
       } 

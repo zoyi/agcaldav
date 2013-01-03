@@ -36,10 +36,46 @@ describe AgCalDAV::Client do
   end
 
 
-  # it "find 2 events" do
-  #   FakeWeb.register_uri(:any, "http://user@10.100.12.111:5232/(.*)", :body => "BEGIN:VCALENDAR\nPRODID:-//Radicale//NONSGML Radicale Server//EN\nVERSION:2.0\nBEGIN:VEVENT\nDESCRIPTION:12345 12345\nDTEND:20010202T120000\nDTSTAMP:20130102T161119\nDTSTART:20010202T080000\nSEQUENCE:0\nSUMMARY:6789\nUID:960232b0-371c-0130-9e6b-001999638982\nX-RADICALE-NAME:960232b0-371c-0130-9e6b-001999638982.ics\nEND:VEVENT\nBEGIN:VEVENT\nDESCRIPTION:12345 12345\nDTEND:20010203T120000\nDTSTAMP:20130102T161124\nDTSTART:20010203T080000\nSEQUENCE:0\nSUMMARY:6789\nUID:98f067a0-371c-0130-9e6c-001999638982\nX-RADICALE-NAME:98f067a0-371c-0130-9e6c-001999638982.ics\nEND:VEVENT\nEND:VCALENDAR")
-  #   r = @c.find_events(:start => "2001-02-02 07:00", :end => "2000-02-03 23:59")
-  #   r.should_not be_nil
-  #   r.length.should == 2
-  # end
+  it "find 2 events" do
+    module Net
+      # Fakeweb doesn't worke here HTTP-method "REPORT" is unknown 
+      class HTTP
+        def request(req, body = nil, &block)
+          self
+        end
+        def code
+          "200"
+        end
+        def body
+          "<?xml version=\"1.0\"?>\n<multistatus xmlns=\"DAV:\" xmlns:C=\"urn:ietf:params:xml:ns:caldav\">\n  <response>\n    <href>/user/calendar/960232b0-371c-0130-9e6b-001999638982.ics</href>\n    <propstat>\n      <prop>\n        <getetag>\"-5984324385549365166\"</getetag>\n        <C:calendar-data>BEGIN:VCALENDAR\nPRODID:-//Radicale//NONSGML Radicale Server//EN\nVERSION:2.0\nBEGIN:VEVENT\nDESCRIPTION:12345 12345\nDTEND:20010202T120000\nDTSTAMP:20130102T161119\nDTSTART:20010202T080000\nSEQUENCE:0\nSUMMARY:6789\nUID:960232b0-371c-0130-9e6b-001999638982\nX-RADICALE-NAME:960232b0-371c-0130-9e6b-001999638982.ics\nEND:VEVENT\nEND:VCALENDAR\n</C:calendar-data>\n      </prop>\n      <status>HTTP/1.1 200 OK</status>\n    </propstat>\n  </response>\n  <response>\n    <href>/user/calendar/98f067a0-371c-0130-9e6c-001999638982.ics</href>\n    <propstat>\n      <prop>\n        <getetag>\"3611068816283260390\"</getetag>\n        <C:calendar-data>BEGIN:VCALENDAR\nPRODID:-//Radicale//NONSGML Radicale Server//EN\nVERSION:2.0\nBEGIN:VEVENT\nDESCRIPTION:12345 12345\nDTEND:20010203T120000\nDTSTAMP:20130102T161124\nDTSTART:20010203T080000\nSEQUENCE:0\nSUMMARY:6789\nUID:98f067a0-371c-0130-9e6c-001999638982\nX-RADICALE-NAME:98f067a0-371c-0130-9e6c-001999638982.ics\nEND:VEVENT\nEND:VCALENDAR\n</C:calendar-data>\n      </prop>\n      <status>HTTP/1.1 200 OK</status>\n    </propstat>\n  </response>\n</multistatus>\n\n"          
+        end
+      end
+    end
+     r = @c.find_events(:start => "2001-02-02 07:00", :end => "2000-02-03 23:59")
+     r.should_not be_nil
+     r.length.should == 2
+   end
+
+
+  it "delete one events" do
+    module Net
+      # Fakeweb doesn't worke here HTTP-method "REPORT" is unknown 
+      class HTTP
+        def request(req, body = nil, &block)
+          self
+        end
+        def code
+          "200"
+        end
+        def body
+          ""          
+        end
+      end
+    end
+    uid = "5385e2d0-3707-0130-9e49-0019996389dd"
+    FakeWeb.register_uri(:any, %r{http://user@localhost:5232/user/calendar/(.*).ics}, :body => "")
+    r = @c.delete_event(uid)
+    r.should == true
+
+   end   
 end
