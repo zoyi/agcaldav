@@ -1,4 +1,5 @@
 # -*- encoding: utf-8 -*-
+$:.push File.expand_path("../lib", __FILE__)
 require File.expand_path('../lib/agcaldav/version', __FILE__)
 
 Gem::Specification.new do |s|
@@ -11,9 +12,9 @@ Gem::Specification.new do |s|
 
   s.license     = 'MIT'
 
-  s.homepage    = 'https://github.com/agilastic/agcaldav'
-  s.authors     = "Alex Ebeling-Hoppe"
-  s.email       = "ebeling-hoppe@agilastic.de"
+  s.homepage    = %q{https://github.com/agilastic/agcaldav}
+  s.authors     = [%q{Alex Ebeling-Hoppe}]
+  s.email       = [%q{ebeling-hoppe@agilastic.de}]
   s.add_runtime_dependency 'icalendar'
   s.add_runtime_dependency 'uuid'
   s.add_runtime_dependency 'builder'
@@ -30,6 +31,6 @@ DESC
 POSTINSTALL
 
 
-  DESC.files         = `git ls-files`.split("\n")
+  s.files         = `git ls-files`.split("\n")
   s.require_paths = ["lib"]
 end
