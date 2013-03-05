@@ -272,9 +272,12 @@ module AgCalDAV
     private
     
     def digestauth method
-
+		
 	    h = Net::HTTP.new @duri.host, @duri.port
-	    
+	    if @ssl
+	    	h.use_ssl = @ssl
+	    	h.verify_mode = OpenSSL::SSL::VERIFY_NONE
+	    end
 	    req = Net::HTTP::Get.new @duri.request_uri
 	    
 	    res = h.request req
