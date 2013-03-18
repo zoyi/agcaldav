@@ -71,9 +71,13 @@ module AgCalDAV
 		else
 			req.add_field 'Authorization', digestauth('REPORT')
 		end
-		
-        req.body = AgCalDAV::Request::ReportVEVENT.new(DateTime.parse(data[:start]).utc.strftime("%Y%m%dT%H%M%S"), 
-                                                       DateTime.parse(data[:end]).utc.strftime("%Y%m%dT%H%M%S") ).to_xml
+		    if data[:start].is_a? Integer
+          req.body = AgCalDAV::Request::ReportVEVENT.new(Time.at(data[:start]).utc.strftime("%Y%m%dT%H%M%S"), 
+                                                        Time.at(data[:end]).utc.strftime("%Y%m%dT%H%M%S") ).to_xml
+        else
+          req.body = AgCalDAV::Request::ReportVEVENT.new(DateTime.parse(data[:start]).utc.strftime("%Y%m%dT%H%M%S"), 
+                                                        DateTime.parse(data[:end]).utc.strftime("%Y%m%dT%H%M%S") ).to_xml
+        end
         res = http.request(req)
       } 
         errorhandling res
@@ -106,11 +110,12 @@ module AgCalDAV
         res = http.request( req )
       }  
       errorhandling res
-      r = Icalendar.parse(res.body)
-      unless r.empty?
-        r.first.events.first 
+      begin
+      	r = Icalendar.parse(res.body)
+      rescue
+      	return false
       else
-        return false
+      	r.first.events.first 
       end
 
       
@@ -185,14 +190,6 @@ module AgCalDAV
     def add_alarm tevent, altCal="Calendar"
     
     end
-
-   
-
-
-
-
-
-
 
     def find_todo uuid
       res = nil
