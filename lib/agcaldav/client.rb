@@ -150,8 +150,8 @@ module AgCalDAV
         dtstart       DateTime.parse(event[:start])
         dtend         DateTime.parse(event[:end])
         categories    event[:categories]# Array
-        contacts       event[:contacts] # Array
-        attendees      event[:attendees]# Array
+        contacts      event[:contacts] # Array
+        attendees     event[:attendees]# Array
         duration      event[:duration]
         summary       event[:title]
         description   event[:description]
@@ -159,6 +159,7 @@ module AgCalDAV
         location      event[:location]
         geo_location  event[:geo_location]
         status        event[:status]
+        url           event[:url]
       end
       cstring = c.to_ical
       res = nil
