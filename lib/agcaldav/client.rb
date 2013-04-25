@@ -133,7 +133,8 @@ module AgCalDAV
         res = http.request( req )
       }
       errorhandling res
-      if res.code.to_i == 200
+      # accept any success code
+      if res.code.to_i.between?(200,299)
         return true
       else
         return false
