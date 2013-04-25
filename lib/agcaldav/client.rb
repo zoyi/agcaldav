@@ -301,6 +301,7 @@ module AgCalDAV
       	
       }
       begin
+        errorhandling res
       	Icalendar.parse(res.body)
       rescue
       	return false
